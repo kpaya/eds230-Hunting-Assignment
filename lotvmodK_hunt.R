@@ -5,15 +5,16 @@
 #'
 #' @param t Time (days)
 #' @param pop Numeric vector with initial conditions: \code{prey} = number of prey, \code{pred} = number of predators
-#' @param pars Named list of parameters:
+#' @param pars datatype list  coefficient in Lotka-Voltera pars$rprey,pars$K, pars$alpha, pars$eff, par$pmort
+#' pars$hunt_rate, pars$min_prey
 #' \describe{
-#'   \item{rprey}{Growth rate of prey population}
-#'   \item{K}{Carrying capacity of the prey population}
-#'   \item{alpha}{Interaction coefficient (higher values mean stronger interaction)}
-#'   \item{eff}{Efficiency or rate of ingestion of prey by predators}
-#'   \item{pmort}{Mortality rate of predator population}
-#'   \item{hunt_rate}{Rate at which prey are hunted (harvested)}
-#'   \item{min_prey}{Minimum prey population threshold before hunting is allowed}
+#'   \emph{rprey}{Growth rate of prey population}
+#'   \emph{K}{Carrying capacity of the prey population}
+#'   \emph{alpha}{Interaction coefficient (higher values mean stronger interaction)}
+#'   \emph{eff}{Efficiency or rate of ingestion of prey by predators}
+#'   \emph{pmort}{Mortality rate of predator population}
+#'   \emph{hunt_rate}{Rate at which prey are hunted (harvested)}
+#'   \emph{min_prey}{Minimum prey population threshold before hunting is allowed}
 #' }
 #'
 #' @examples
