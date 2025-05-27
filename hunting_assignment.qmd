@@ -1,0 +1,151 @@
+---
+title: "Hunting Assignment "
+format: html
+author: Karol Paya & Oksana Protsukha
+date: 2025-05-27
+format: html
+embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Part 1
+
+Build this model (e.g add hunting to the lotvmodK.R),
+
+Some requirements/hints for your model
+
+-   You should make sure that you don't hunt more prey than exist.
+
+-   To ensure that you might also add a minimum prey population input that must be met before hunting is allowed.
+
+-   Note you can make this as simple or as complex as you would like. You could represent hunting in a way that is similar to "harvesting" in the last assignment. 
+
+```{r}
+#Load libraries
+library(deSolve)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+# Source function
+source("lotvmodK_hunt.R")
+```
+
+```{r}
+# Initial populations
+currpop <- c(prey = 50, pred = 10)
+
+# Time sequence
+times <- seq(0, 100, by = 1)
+
+# Model parameters
+pars <- list(
+  rprey = 0.5,       # prey growth rate
+  alpha = 0.3,       # predator interaction coefficient
+  eff = 0.2,         # predator efficiency
+  pmort = 0.2,       # predator mortality
+  K = 100,           # carrying capacity
+  hunt_rate = 0.1,   # hunting rate
+  min_prey = 5       # minimum prey population for hunting
+)
+
+# Run the model
+res <- ode(y = currpop, times = times, func = lotvmodK_hunt, parms = pars)
+res_df <- as.data.frame(res)
+```
+
+```{r}
+# Convert to long format for ggplot
+res_long <- pivot_longer(res_df, cols = c("prey", "pred"), names_to = "population", values_to = "count")
+
+# Plot prey and predator over time
+ggplot(res_long, aes(x = time, y = count, color = population)) +
+  geom_line(size = 1.2) +
+  labs(title = "Predator-Prey Dynamics with Hunting",
+       x = "Time (days)",
+       y = "Population",
+       color = "Population") +
+  theme_minimal()
+```
+
+To ensure that hunting does not remove more prey than exist:
+
+-   Ensure hunting does not remove more prey than exist
+
+-   Only hunt if prey population is above a minimum threshold
+
+-   Time-varying hunting rate (e.g., seasonal)
+
+# Part 2
+
+Explore how different hunting levels and different minimum prey populations (before hunting is allowed) are likely to effect the stability of the populations of both predator and prey.\
+\
+A key challenge is how you might want to define stability? It is up to you but you will need to write a sentence to explain why you chose the measure that you did. \
+\
+It could be something as simple as maintaining a population above some value 50 years into the future.  
+
+Use this exploration to recommend a hunting target that will be sustainable (e.g leave you with a stable prey and predator population).
+
+It is up to you how you "explore" hunting  - you can simply try different values of the parameters in your hunting model or do it more formally by running your model across a range of values. You could think about parameter interactions
+
+You can assume the following are best guesses of key parameters
+
+rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000
+
+We define stability as: **Both prey and predator populations maintain an average density above a threshold (e.g., 10) between year 40 and year 50 (i.e., time steps 400–500).**
+
+```{r}
+# model parameters
+base_pars <- list(
+  rprey = 0.95,   # Prey intrinsic growth rate
+  alpha = 0.01,   # Interaction strength
+  eff = 0.6,      # Conversion efficiency from prey to predator biomass
+  pmort = 0.4,    # Predator mortality rate
+  K = 2000        # Carrying capacity
+)
+```
+
+We'll vary:
+
+-   `hunt_rate`: from 0 to 0.3
+
+-   `min_prey`: from 50 to 500
+
+```{r}
+# Explore
+hunt_vals <- seq(0, 0.3, by = 0.05)
+minprey_vals <- seq(50, 500, by = 50)
+
+results <- expand.grid(hunt_rate = hunt_vals, min_prey = minprey_vals)
+results$stable <- NA
+
+for (i in 1:nrow(results)) {
+  pars <- c(pars, list(
+    hunt_rate = results$hunt_rate[i],
+    min_prey = results$min_prey[i]
+  ))
+  
+  # Initial conditions
+  out <- ode(
+    y = c(prey = 1000, pred = 100),
+    times = seq(0, 500), # Time from 0 to 500 days (or units), using a step of 1
+    func = lotvmodK_hunt,
+    parms = pars
+  )
+  # Initialize results dataframe
+  df <- as.data.frame(out)
+  # This corresponds to year 40–50 if each time unit is interpreted as 0.1 years
+  mean_prey <- mean(df$prey[401:501])
+  mean_pred <- mean(df$pred[401:501])
+  
+  # Determine if the system is stable based on thresholds
+  results$stable[i] <- mean_prey > 10 & mean_pred > 10 
+}
+```
+
+```{r}
+
+#plot
+
+```
