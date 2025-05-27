@@ -62,7 +62,7 @@ res_long <- pivot_longer(res_df, cols = c("prey", "pred"), names_to = "populatio
 # Plot prey and predator over time
 ggplot(res_long, aes(x = time, y = count, color = population)) +
   geom_line(size = 1.2) +
-  labs(title = "Predator-Prey Dynamics with Hunting",
+  labs(title = "Rate of Change of the Prey-Predator Populations Interaction (with Hunting)",
        x = "Time (days)",
        y = "Population",
        color = "Population") +
@@ -75,7 +75,7 @@ To ensure that hunting does not remove more prey than exist:
 
 -   Only hunt if prey population is above a minimum threshold
 
--   Time-varying hunting rate (e.g., seasonal)
+-   Time-varying hunting rate (e.g., seasonal), made it as the first 25 days of every 50-day cycle
 
 # Part 2
 
@@ -93,11 +93,11 @@ You can assume the following are best guesses of key parameters
 
 rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000
 
-We define stability as: **Both prey and predator populations maintain an average density above a threshold (e.g., 10) between year 40 and year 50 (i.e., time steps 400–500).**
+We define stability as: **Both prey and predator populations maintain a proprotion above a threshold (XXX) between year 40 and year 50 (i.e., time steps 400–500).**
 
 ```{r}
 # model parameters
-base_pars <- list(
+pars <- list(
   rprey = 0.95,   # Prey intrinsic growth rate
   alpha = 0.01,   # Interaction strength
   eff = 0.6,      # Conversion efficiency from prey to predator biomass
@@ -147,5 +147,5 @@ for (i in 1:nrow(results)) {
 ```{r}
 
 #plot
-
+results
 ```
