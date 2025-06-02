@@ -33,46 +33,54 @@ library(ggpubr) # to arrange plots
 
 # Source function
 source("lotvmodK_hunt_v2.R")
+source("lotvmodK_hunt.R")
 ```
 
 
 ```{r}
-# Initial conditions
-currpop <- c(prey = 80, pred = 15)
+# Initial populations
+currpop <- c(prey = 50, pred = 10)
 
-# Time points to see results
+# Time sequence
 times <- seq(0, 100, by = 1)
 
 # Model parameters
-pars <- c(
-  rprey = 0.95, 
-  K = 2000, 
-  alpha = 0.01, 
-  pmort = 0.4,
-  eff = 0.6,
-  hunt_rate = 0, 
-  min_prey = 60
+pars <- list(
+  rprey = 0.5,       # prey growth rate
+  alpha = 0.3,       # predator interaction coefficient
+  eff = 0.2,         # predator efficiency
+  pmort = 0.2,       # predator mortality
+  K = 100,           # carrying capacity
+  hunt_rate = 0.1,   # hunting rate
+  min_prey = 5       # minimum prey population for hunting
 )
 
 # Run the model
-res <- ode(func = lotvmodK_hunt_v2, y = currpop, times = times, parms = pars)
+res <- ode(y = currpop, times = times, func = lotvmodK_hunt, parms = pars)
+res_df <- as.data.frame(res)
 
-# Visualize results
-resl <- as.data.frame(res) %>% 
-  pivot_longer(-time, names_to = "pop_type", values_to = "pop")
+# Convert to long format for ggplot
+res_long <- pivot_longer(res_df, cols = c("prey", "pred"), names_to = "population", values_to = "count")
 
-p1 <- ggplot(resl, aes(time, pop, col = pop_type)) +
-  geom_line() +
-  labs(title = "Prey-Preditor Interaction with Hunting")
-
-p2b <- ggplot(as.data.frame(res), aes(pred, prey, col = time)) +
-  geom_point() +
-  labs(y = "Prey", x = "Predators")
-
-ggarrange(p1, p2b)
+# Plot prey and predator over time
+ggplot(res_long, aes(x = time, y = count, color = population)) +
+  geom_line(size = 1.2) +
+  labs(title = "Rate of Change of the Prey-Predator Populations Interaction (with Hunting)",
+       x = "Time (days)",
+       y = "Population",
+       color = "Population") +
+  theme_minimal()
 
 ```
 
+
+To ensure that hunting does not remove more prey than exist:
+
+-   Ensure hunting does not remove more prey than exist
+
+-   Only hunt if prey population is above a minimum threshold
+
+-   Time-varying hunting rate (e.g., seasonal), made it as the first 25 days of every 50-day cycle
 
 ## PART 2
 
