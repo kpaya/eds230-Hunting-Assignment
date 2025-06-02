@@ -1,11 +1,21 @@
 ---
-title: "Hunting Assignment "
-author: Karol Paya & Oksana Protsukha
-date: 2025-05-27
-format: html
-embed-resources: true
+title: Assignment - Sustainable Hunting Model
+toc: true
+format:
+  html:
+    embed-resources: true
+    code-fold: false 
+    code-tools: true 
+    mathjax: true
 editor_options: 
   chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: sentence
+author: 
+  - name: Karol Paya & Oksana Protsukha
+    affiliation: Master of Environmental Data Science Program
+date: 2025-06-01
 ---
 
 ## PART 1: Test the model with best guess parameters
@@ -20,7 +30,12 @@ Some requirements/hints for your model
 
 -   Note you can make this as simple or as complex as you would like. You could represent hunting in a way that is similar to "harvesting" in the last assignment. 
 
-```{r}
+```{r, setup,  message=FALSE, warning=FALSE, results='hide'}
+#| eval: true
+#| echo: false
+#| code-fold: true
+
+
 #Load libraries
 library(deSolve)
 library(tidyverse)
@@ -324,7 +339,7 @@ cat("\nStability = mean deviation from natural equilibrium over last 3 years ass
 
 ### Visualize Results
 
-```{r, sobol_viz, stability_function, message=FALSE, warning=FALSE, results='hide'}
+```{r, sobol_viz, stability_function, message=FALSE, warning=FALSE}
 #| eval: true
 #| echo: true
 #| code-fold: true
@@ -367,23 +382,6 @@ for (i in 1:nrow(scenarios)) {
 # PLot all time series plots in a 2x2 grid
 combined_grid <- ggarrange(plotlist = plot_list, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom")
 print(combined_grid)
-
-# Combined plot showing all scenarios together
-all_data <- data.frame()
-
-for (i in 1:nrow(scenarios)) {
-  pars <- c(base_pars, hunt_rate = scenarios$hunt_rate[i], min_prey = scenarios$min_prey[i])
-  currpop <- currpop
-  times <- times
-  
-  res <- ode(func = lotvmodK_hunt_v2, y = currpop, times = times, parms = pars)
-  
-  df <- as.data.frame(res) %>%
-    mutate(scenario = scenarios$scenario[i]) %>%
-    pivot_longer(cols = c(prey, pred), names_to = "pop_type", values_to = "pop")
-  
-  all_data <- rbind(all_data, df)
-}
 
 # Summary table
 summary_data <- data.frame()
