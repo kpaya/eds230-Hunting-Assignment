@@ -1,11 +1,21 @@
 ---
-title: "Hunting Assignment "
-author: Karol Paya & Oksana Protsukha
-date: 2025-05-27
-format: html
-embed-resources: true
+title: Assignment - Sustainable Hunting Model
+toc: true
+format:
+  html:
+    embed-resources: true
+    code-fold: false 
+    code-tools: true 
+    mathjax: true
 editor_options: 
   chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: sentence
+author: 
+  - name: Karol Paya & Oksana Protsukha
+    affiliation: Master of Environmental Data Science Program
+date: 2025-06-01
 ---
 
 ## PART 1: Test the model with best guess parameters
@@ -21,6 +31,14 @@ Some requirements/hints for your model
 -   Note you can make this as simple or as complex as you would like. You could represent hunting in a way that is similar to "harvesting" in the last assignment. 
 
 ```{r}
+#| label: setup
+#| message: false
+#| warning: false
+#| results: hide
+#| eval: true
+#| echo: false
+#| code-fold: true
+
 #Load libraries
 library(deSolve)
 library(tidyverse)
@@ -38,11 +56,16 @@ source("lotvmodK_hunt.R")
 
 
 ```{r}
+#| label: test_model
+#| eval: true
+#| echo: true
+#| code-fold: true
+
 # Initial populations
 currpop <- c(prey = 50, pred = 10)
 
 # Time sequence
-times <- seq(0, 100, by = 1)
+times <- seq(0, 200, by = 1)
 
 # Model parameters
 pars <- list(
@@ -64,7 +87,7 @@ res_long <- pivot_longer(res_df, cols = c("prey", "pred"), names_to = "populatio
 
 # Plot prey and predator over time
 ggplot(res_long, aes(x = time, y = count, color = population)) +
-  geom_line(size = 1.2) +
+  geom_line(linewidth = 1.2) +
   labs(title = "Rate of Change of the Prey-Predator Populations Interaction (with Hunting)",
        x = "Time (days)",
        y = "Population",
@@ -82,15 +105,19 @@ To ensure that hunting does not remove more prey than exist:
 
 -   Time-varying hunting rate (e.g., seasonal), made it as the first 25 days of every 50-day cycle
 
-## PART 2
+## PART 2: Explore System Stability
 
-# Part 2.1: Explore System Stability Using Scenario-Based Approach
+## Part 2.1: Explore System Stability Using Scenario-Based Approach
 
-### Define Stability
+#### Define Stability
 **Stability** is defined at the intersection of dprey/dt = 0 and dpred/dt = 0.
 Sustainable hunting maintains both populations above minimum thresholds.
 
-```{r, scenario_based_stability, message=FALSE, warning=FALSE, results='hide'}
+```{r}
+#| label: zero_derivative_scenarios
+#| message: false
+#| warning: false
+#| results: hide
 #| eval: true
 #| echo: true
 #| code-fold: true
@@ -130,7 +157,7 @@ find_single_equilibrium <- function(hunt_rate, min_prey) {
   for (prey in prey_vals) {
     for (pred in pred_vals) {
       pop <- c(prey = prey, pred = pred)
-      derivs <- lotvmodK_hunt_v2(t = 0, pop = pop, pars = pars)
+      derivs <- lotvmodK_hunt(t = 0, pop = pop, pars = pars)
       
       dprey <- derivs[[1]][1]
       dpred <- derivs[[1]][2]
@@ -205,7 +232,7 @@ for (i in 1:nrow(scenarios)) {
   
   for (prey in prey_range) {
     pop <- c(prey = prey, pred = fixed_pred)
-    derivs <- lotvmodK_hunt_v2(t = 0, pop = pop, pars = pars)
+    derivs <- lotvmodK_hunt(t = 0, pop = pop, pars = pars)
     dprey <- derivs[[1]][1]
     
     stability_data <- rbind(stability_data, data.frame(
@@ -231,15 +258,19 @@ print(p)
 
 ```
 
-# Part 2.2: Find Sustainable Hunting Rate Using Optimization Approach
+## Part 2.2: Find Sustainable Hunting Rate Using Optimization Approach
 
-### Define Stability
+#### Define Stability
 
 **Stability** is defined as mean relative deviation from natural equilibrium over the final 3 years, assuming populations remain within viable recovery thresholds.
 
-### Calculate Optimization Parameters for Sustainable Hunting
+#### Calculate Optimization Parameters for Sustainable Hunting
 
-```{r, stability_function, message=FALSE, warning=FALSE, results='hide'}
+```{r}
+#| label: stability_2
+#| message: false
+#| warning: false
+#| results: hide
 #| eval: true
 #| echo: true
 #| code-fold: true
@@ -249,7 +280,7 @@ calculate_stability <- function(params, natural_prey, natural_pred) {
   # Run model with given parameters
   result <- ode(y = c(prey = 500, pred = 50),
                times = seq(1, 365 * 8, by = 5),
-               func = lotvmodK_hunt_v2,
+               func = lotvmodK_hunt,
                parms = params)
   
   # Get last 3 years and calculate mean deviation from equilibrium
@@ -264,11 +295,10 @@ calculate_stability <- function(params, natural_prey, natural_pred) {
 # Base ecological parameters
 base_pars <- list(rprey = 0.95, alpha = 0.01, eff = 0.6, pmort = 0.4, K = 2000)
 
-# Find natural equilibrium (no hunting)
-cat("Calculating natural equilibrium...\n")
+# Find natural equilibrium (based on best guess input parameters, no hunting)
 natural_result <- ode(y = c(prey = 500, pred = 50), 
                      times = seq(1, 365 * 10, by = 5),
-                     func = lotvmodK_hunt_v2, 
+                     func = lotvmodK_hunt, 
                      parms = c(base_pars, hunt_rate = 0, min_prey = 0))
 
 equilibrium_data <- tail(as.data.frame(natural_result), 146)
@@ -302,37 +332,44 @@ best_params <- scenarios[best_idx, ]
 # Get final populations for best scenario
 final_result <- ode(y = c(prey = 500, pred = 50),
                    times = seq(1, 365 * 8, by = 5),
-                   func = lotvmodK_hunt_v2,
+                   func = lotvmodK_hunt,
                    parms = as.list(best_params))
 final_pops <- tail(as.data.frame(final_result), 1)
 
 ```
 
 
-```{r, resuts, message=FALSE, warning=FALSE,}
+```{r}
+#| label: results
+#| message: false
+#| warning: false
 #| eval: true
 #| echo: false
 #| code-fold: false
 
 # Display results
-cat("\nNATURAL EQUILIBRIUM (no hunting):\n")
-cat("Prey:", round(natural_prey, 1), "\n")
-cat("Predators:", round(natural_pred, 1), "\n")
+cat("\nNatural Equilibrium (based on best guess input parameters, no hunting):\n")
+cat("Prey:", round(natural_prey, 0), "\n")
+cat("Predators:", round(natural_pred, 0), "\n")
 
-cat("\nOPTIMAL HUNTING STRATEGY:\n")
+cat("\nOptimal Hunting Parameters:\n")
 cat("Hunt Rate:", round(best_params$hunt_rate * 100, 1), "%\n")
-cat("Min Prey Threshold:", round(best_params$min_prey, 1), "\n")
-cat("Final Prey:", round(final_pops$prey, 1), "\n")
-cat("Final Predators:", round(final_pops$pred, 1), "\n")
-cat("Stability Score:", round(stability_scores[best_idx], 4), "(lower = more stable)\n")
+cat("Min Prey Threshold:", round(best_params$min_prey, 0), "\n")
+cat("Final Prey:", round(final_pops$prey, 0), "\n")
+cat("Final Predators:", round(final_pops$pred, 0), "\n")
+cat("Stability Score:", round(stability_scores[best_idx], 8), "(lower = more stable)\n")
 
 cat("\nStability = mean deviation from natural equilibrium over last 3 years assuming prey and pred populations remain within recovery thresholds.\n")
 
 ```
 
-### Visualize Results
+#### Visualize Results
 
-```{r, sobol_viz, stability_function, message=FALSE, warning=FALSE, results='hide'}
+```{r}
+#| label: stability_2_viz
+#| message: false
+#| warning: false
+#| results: hide
 #| eval: true
 #| echo: true
 #| code-fold: true
@@ -356,7 +393,7 @@ for (i in 1:nrow(scenarios)) {
   times <- times
   
   # Run the model
-  res <- ode(func = lotvmodK_hunt_v2, y = currpop, times = times, parms = pars)
+  res <- suppressMessages(ode(func = lotvmodK_hunt, y = currpop, times = times, parms = pars, maxsteps = 10000))
   
   # Visualize results
   resl <- as.data.frame(res) %>% pivot_longer(-time, names_to = "pop_type", values_to = "pop")
@@ -384,7 +421,8 @@ for (i in 1:nrow(scenarios)) {
   currpop <- currpop
   times <- times
   
-  res <- ode(func = lotvmodK_hunt_v2, y = currpop, times = times, parms = pars)
+  res <- suppressMessages(
+    ode(func = lotvmodK_hunt, y = currpop, times = times, parms = pars, maxsteps = 10000))
   
   df <- as.data.frame(res) %>%
     mutate(scenario = scenarios$scenario[i]) %>%
@@ -400,7 +438,9 @@ for (i in 1:nrow(scenarios)) {
   currpop <- currpop
   times <- times
   
-  res <- ode(func = lotvmodK_hunt_v2, y = currpop, times = times, parms = pars)
+  res <- suppressMessages(
+    ode(func = lotvmodK_hunt, y = currpop, times = times, parms = pars, maxsteps = 10000)
+    )
   
   # Get final 2 years average
   final_data <- tail(as.data.frame(res), 146)  # ~2 years of data
@@ -408,11 +448,20 @@ for (i in 1:nrow(scenarios)) {
   summary_data <- rbind(summary_data, data.frame(
     scenario = scenarios$scenario[i],
     hunt_rate = scenarios$hunt_rate[i] * 100,
-    avg_prey = round(mean(final_data$prey), 1),
-    avg_pred = round(mean(final_data$pred), 1)
+    avg_prey = round(mean(final_data$prey), 0),
+    avg_pred = round(mean(final_data$pred), 0)
   ))
 }
 
+```
+
+```{r}
+#| label: stability_2_summary
+#| message: false
+#| warning: false
+#| eval: true
+#| echo: false
+#| code-fold: false
 print(summary_data)
 ```
 
